@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """
 Created on Mon May 17 15:39:25 2021
 
 changed on 2023-02-20
+changed on 2023-03-24
 
-@author: andbro
+@author: Andreas Brotzer
 
 """
 
@@ -14,6 +16,7 @@ changed on 2023-02-20
 import os
 import csv
 import serial
+import subprocess
 
 from time import sleep
 from pathlib import Path
@@ -53,6 +56,10 @@ length_of_data_buffer = 60
 serial1 = "/dev/ttyS1"
 serial2 = "/dev/ttyS2"
 
+## mail adress for warning mails
+mailadress = "brotzer@geophysik.uni-muenchen.de"
+
+
 ## ##### SETUP ##################################################
 
 ## setup the serial configurations
@@ -87,6 +94,12 @@ if exitstatus == 1:
 
 
 ## ##### METHODS ################################################
+
+## -------------------------------------------
+def __send_mail(subject, body, mailadress):
+    body_str_encoded_to_byte = body.encode()
+    return_stat = subprocess.run([f"mail", f"-s {subject}", f"{mailadress}"], input=body_str_encoded_to_byte)
+
 
 ## -------------------------------------------
 def __write_to_log(directory, filename, msg):
@@ -257,9 +270,10 @@ if __name__ == "__main__":
 
     while True:
 
+
         ## read values from serial port
         readout, timestamp = __readout()
-
+        print(readout, timestamp)
 
         ## extract values from readout
         if len(readout) == 6:
@@ -287,8 +301,15 @@ if __name__ == "__main__":
         ## check Spark criteria and set lasing switch
         if dc_mean < threshold_dc:
             if not lasing_stopped:
+
+                ## write logfile entry
                 __write_to_log(logpath, logfile, f"ERROR: lasing stopped! DC_mean={dc_mean} < Threshold={threshold_dc}")
+
+                ## send notification via mail
+                __send_mail("WARNING: lasing stopped", f"{timestamp}  WARNING: lasing stopped for beagle {beagle}", mailadress)
+
             lasing_stopped = True
+
         else:
             lasing_stopped = False
 
@@ -303,13 +324,25 @@ if __name__ == "__main__":
 
         ## check recovery status
         if recovery_new['mode'] is not recovery['mode']:
-             if recovery_new['mode']:
-                 __write_to_log(logpath, logfile, f"ACTION: recovery started")
-             elif not recovery_new['mode']:
-                 __write_to_log(logpath, logfile, f"ACTION: recovery ended ({recovery_new['num']} MLTI)")
+            if recovery_new['mode']:
 
-                 ## reset recovery count
-                 recovery_new['num'] = 0
+                ## write logfile entry
+                __write_to_log(logpath, logfile, f"ACTION: recovery started")
+
+                ## send notification via mail
+                __send_mail("WARNING: recovery started", f"{timestamp}  WARNING: recovery started for beagle {beagle}", mailadress)
+
+
+            elif not recovery_new['mode']:
+
+                ## write logfile entry
+                __write_to_log(logpath, logfile, f"ACTION: recovery stopped ({recovery_new['num']} MLTI)")
+
+                ## send notification via mail
+                __send_mail("WARNING: recovery stopped", f"{timestamp}  WARNING: recovery stopped for beagle {beagle}", mailadress)
+
+                ## reset recovery count
+                recovery_new['num'] = 0
 
         ## update recovery status
         recovery = recovery_new
