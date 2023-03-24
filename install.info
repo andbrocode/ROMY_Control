@@ -1,7 +1,32 @@
+## INFO FOR SETUP
 
 
-pip3 install numpy
+## -----------------------------------------------
+## genereal packages that are required 
 
-sudo apt-get install libatlas-base-dev
+sudo apt install pip -y 
+
+sudo apt-get install libatlas-base-dev -y
+
+pip3 install numpy serial
 
 
+## -----------------------------------------------
+## To setup ssh to taupo for archiving data do: 
+
+# generate ssh key in .ssh
+cd .ssh
+ssh-keygen
+
+# copy it to know_host at sysop@taupo
+ssh-copy-id -i /root/.ssh/id_rsa.pub sysop@taupo
+
+## -----------------------------------------------
+## For setup of romy_control.service run: 
+cp ~/romy_control_AB/romy_control.service /etc/systemd/system/
+
+sudo systemctl daemon-reload
+sudo systemctl enable romy_control.service
+sudo systemctl start romy_control.service
+
+## END OF FILE
