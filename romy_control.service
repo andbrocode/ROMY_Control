@@ -1,0 +1,19 @@
+
+# systemctl service to run romy_control.py
+#
+#
+#
+[Unit]
+Description=romy_controly_service
+After=network.target
+
+
+[Service]
+ExecStart=/usr/bin/python3 /root/romy_control_AB/romy_control.py
+#ExecReload=/usr/bin/python3 /root/romy_control_AB/romy_control.py -k graceful
+Type=simple
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
