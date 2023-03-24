@@ -122,6 +122,7 @@ def __check_file_structure(outpath):
     if not os.path.exists(outpath+year_now):
         os.mkdir(outpath+year_now)
 
+
 ## -------------------------------------------
 def __dump_to_file(outpath, data_to_dump):
 
@@ -179,8 +180,9 @@ def __readout():
 
     return readout, timestamp
 
+
 ## -------------------------------------------
-def __check_MLTI(last_mlti):
+def __check_MLTI(last_mlti, recovery):
 
 #    if (mean(dc_array) < threshold_dc):
 
@@ -195,6 +197,10 @@ def __check_MLTI(last_mlti):
 
     if (std(ac_array) > threshold_ac_std) or (mean(ac_array) < threshold_ac):
 
+        ## change recovery status and increase count
+        recovery['mode'] = True
+        recovery['num'] = recovery_num + 1
+
         ## get timestamp as reference criteria
         last_mlti = datetime.utcnow().isoformat()
 
@@ -202,10 +208,13 @@ def __check_MLTI(last_mlti):
         ser1.write(cmd_mlti)
 
         print(f"{last_mlti}: MLTI ...")
-        __write_to_log(logpath, logfile, "ACTION: inciated MLTI due to low AC value!")
+#        __write_to_log(logpath, logfile, "ACTION: inciated MLTI due to low AC value!")
         __write_to_log(logpath, mlti_file, "MLTI,AC")
 
-    return last_mlti
+    else:
+        recovery['mode'] = False
+
+    return last_mlti, recovery
 
 
 
@@ -231,6 +240,14 @@ if __name__ == "__main__":
 
     ## switch for lasing
     lasing_stopped = False
+
+    ## recovery status with mlti
+    recovery = {}
+    recovery['mode'] = False
+    recovery['num'] = 0
+
+    ## initialize updatable version of recovery
+    recovery_new = recovery
 
     ## create empty data buffer
     data_buffer = []
@@ -276,13 +293,26 @@ if __name__ == "__main__":
             lasing_stopped = False
 
         ## get time difference to last MLTI
-        # print(type(timestamp), type(last_mlti))
         time_delta = (datetime.fromisoformat(timestamp) - datetime.fromisoformat(last_mlti)).total_seconds()
 
 
         ## check if MLTI criteria are matched and launch MLTI if true
         if abs(time_delta) > 60 and not lasing_stopped:
-            last_mlti = __check_MLTI(last_mlti)
+            last_mlti, recovery_new = __check_MLTI(last_mlti, recovery)
+
+
+        ## check recovery status
+        if recovery_new['mode'] is not recovery['mode']:
+             if recovery_new['mode']:
+                 __write_to_log(logpath, logfile, f"ACTION: recovery started")
+             elif not recovery_new['mode']:
+                 __write_to_log(logpath, logfile, f"ACTION: recovery ended ({recovery_new['num']} MLTI)")
+
+                 ## reset recovery count
+                 recovery_new['num'] = 0
+
+        ## update recovery status
+        recovery = recovery_new
 
 
         ## write data buffer to output file when X lines long or date changes (relieves writing operation to SD card)
@@ -294,6 +324,7 @@ if __name__ == "__main__":
             ## reset buffer and date0
             data_buffer = []
             date0 = timestamp.split(".")[0][:10]
+
 
         ## create datastring and write it to output file every second
         if abs((last_writeout - datetime.fromisoformat(timestamp)).total_seconds()) >= 1:
