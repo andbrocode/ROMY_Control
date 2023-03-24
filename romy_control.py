@@ -273,7 +273,7 @@ if __name__ == "__main__":
 
         ## read values from serial port
         readout, timestamp = __readout()
-        print(readout, timestamp)
+        #print(readout, timestamp)
 
         ## extract values from readout
         if len(readout) == 6:
