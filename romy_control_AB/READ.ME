@@ -1,0 +1,49 @@
+## READ.ME File for ROMY Control
+#
+# Several scripts in this directory (romy_control_AB) belong to the ROMY control suite. 
+#
+# author: AndBro
+# year:   2021
+#
+# -----------------------------------------
+#
+# scripts are defined as jobs in the crontab (crontab -e)
+#
+#
+# romy_control.py
+#
+# - reads values of AC, DC and FO from the microcontroller. DC_mean and AC_mean are determined based on a buffer array 
+#   and evaluated against defined thresholds whether an MLTI is triggered or not.
+# - values are stored with a 1 second sampling rate and written to a file on the /SD-Card every 60 seconds.
+#
+#
+# startup.sh
+#
+# - can be used to launch romy_control.py as a screen process. Would require an entry in the crontab.
+#
+#
+# sync_data_to_archive.sh
+#
+# - uses rsync to copy files at /SD-Card to the ROMY archive (/import/freenas-ffb-01-data) every 10 minutes.
+#
+#  
+# check_process_status.sh 
+#
+# - checks as a cronjob every 5 minutes if romy_control.py is still a running process
+# - checks if the filesize of /SD-Card/<year>/ is increasing 
+# - issues mails to a specified mail, if one is breached 
+#
+#####################
+# ALTERNATIVE
+#
+# romy_control.service
+#
+# - alternative to running the romy_control.py as a screen job with startup. 
+# - service for systemctl that launches romy_control.py
+#
+# update_service.sh
+#
+# - shell script to update the serivce file in the /etc/systemd/system/ directory 
+#   when changes were made to romy_control.service
+#
+# END OF FILE  

@@ -1,0 +1,19 @@
+#
+# systemctl service to run romy_control.py
+#
+[Unit]
+Description=romy_controly_service
+After=network.target
+FailureAction=/root/romy_control_AB/systemd_send_mail.sh
+
+[Service]
+ExecStart=/usr/bin/python3 /root/romy_control_AB/romy_control.py
+#ExecReload=/usr/bin/python3 /root/romy_control_AB/romy_control.py -k graceful
+Type=simple
+#Restart=on-failure
+RuntimeMaxSec=86400s
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

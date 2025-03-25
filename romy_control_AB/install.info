@@ -1,0 +1,7 @@
+
+
+pip3 install numpy
+
+sudo apt-get install libatlas-base-dev
+
+
